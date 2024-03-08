@@ -86,10 +86,10 @@ ggsave("fig4B_MDM2_tumortype.pdf", width = 16, height = 3)
 gene_anno_CDKN1A <- gene_anno |> filter(symbol == "CDKN1A")
 CDKN1A_expr <- CLIFF::getCelllineDataGeneExpressionById(gene_anno_CDKN1A$ensg, ca_sens) 
 
-generateExpressionPlot(CDKN1A_expr, plotType = "point", title = paste("CDKN1A -", e))
+generateExpressionPlot(CDKN1A_expr, plotType = "point", title = paste("CDKN1A -", gene_anno_CDKN1A$ensge))
 ggsave("fig4C_MDM2_CDKN1A_expr_point.pdf", width = 6, height = 6)
 
-generateExpressionPlot(CDKN1A_expr, plotType = "roc", title = paste("CDKN1A -", e))
+generateExpressionPlot(CDKN1A_expr, plotType = "roc", title = paste("CDKN1A -", gene_anno_CDKN1A$ensg))
 ggsave("fig4D_MDM2_CDKN1A_expr_ROC.pdf", width = 6, height = 6)
 
 # ---------------- CDKN1A protein expression ----------
