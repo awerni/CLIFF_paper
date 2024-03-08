@@ -1,0 +1,4 @@
+source("fig3_EGFR_waterfall_selection/EGFR_waterfall.R")
+source("fig4_MDM2_CRISPR_KO_analysis/MDM2_analysis.R")
+source("fig5_multiple_features/MDM2_CDKN1A_scatter.R")
+source("fig6_pathway_genes_dependency/plot_pathway_gene_dependency.R")
