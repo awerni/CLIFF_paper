@@ -40,14 +40,14 @@ diff_Avana <- CLIFF::getDepletionAssociation(ca_sens, "Avana", "chronos", gene_a
 
 getGeneTitle <- function(a) paste(a$symbol, "-", a$ensg)
 
-PPM1D_Avana <- CLIFF::getCelllineDataDepletionById(gene_anno_PPM1D$ensg, ca_sens, "Avana", "chronos")
-generateDepletionPlot(PPM1D_Avana, plotType = "point", dataCol = "chronos", title = getGeneTitle(gene_anno_PPM1D))
-ggsave("MDM2_sens_PPM1D_Avana.pdf", width = 6, height = 6)
-
 TP53_Avana <- CLIFF::getCelllineDataDepletionById(gene_anno_TP53$ensg, ca_sens, "Avana", "chronos")
 generateDepletionPlot(TP53_Avana, plotType = "point", dataCol = "chronos", title = getGeneTitle(gene_anno_TP53))
-ggsave("MDM2_sens_TP53_Avana.pdf", width = 6, height = 6)
+ggsave("fig6A_MDM2_sens_TP53_Avana.pdf", width = 6, height = 6)
 
 CDKN1A_Avana <- CLIFF::getCelllineDataDepletionById(gene_anno_CDKN1A$ensg, ca_sens, "Avana", "chronos")
 generateDepletionPlot(CDKN1A_Avana, plotType = "point", dataCol = "chronos", title = getGeneTitle(gene_anno_CDKN1A))
-ggsave("MDM2_sens_CDKN1A_Avana.pdf", width = 6, height = 6)
+ggsave("fig6B_MDM2_sens_CDKN1A_Avana.pdf", width = 6, height = 6)
+
+PPM1D_Avana <- CLIFF::getCelllineDataDepletionById(gene_anno_PPM1D$ensg, ca_sens, "Avana", "chronos")
+generateDepletionPlot(PPM1D_Avana, plotType = "point", dataCol = "chronos", title = getGeneTitle(gene_anno_PPM1D))
+ggsave("fig6C_MDM2_sens_PPM1D_Avana.pdf", width = 6, height = 6)
