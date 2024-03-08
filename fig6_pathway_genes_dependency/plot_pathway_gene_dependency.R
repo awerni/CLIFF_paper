@@ -19,6 +19,7 @@ gene_anno <- getGeneAnno("human") |>
 gene_anno_MDM2 <- gene_anno |> filter(symbol == "MDM2")
 gene_anno_PPM1D <- gene_anno |> filter(symbol == "PPM1D")
 gene_anno_CDKN1A <- gene_anno |> filter(symbol == "CDKN1A")
+gene_anno_TP53  <- gene_anno |> filter(symbol == "TP53")
 
 # ---------------- MDM2 CRISPR dependency data ----------------
 MDM2_avana <- getCelllineDataDepletionById(gene_anno_MDM2$ensg, celllineClasses = cl_anno$celllinename, study = "Avana", scores = "chronos") |>
