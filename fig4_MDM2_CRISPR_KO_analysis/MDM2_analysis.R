@@ -7,30 +7,17 @@ s <- getSettings()
 print(s$db)
 setDbOptions(s)
 
-cl_anno <- getCellLineAnno("human") |>
-  filter(tumortype %in% c("ovarian cancer", "melanoma", "renal cell carcinoma", "colorectal cancer", "esophagogastric cancer")) |>
-  filter(!histology_type %in% c("esophageal adenocarcinoma", "esophageal squamous cell carcinoma")) |>
-  mutate(tumortype = ifelse(tumortype == "esophagogastric cancer", "gastric cancer", as.character(tumortype))) |>
-  mutate(tumortype = as.factor(tumortype))
+source("MDM2_analysis_functions.R")
 
-gene_anno <- getGeneAnno("human") |>
-  filter(grepl("^.{1,2}:", location))
+cl_anno <- getCelllineAnno_4paper()
+gene_anno <- getGeneAnno_4paper()
 
 gene_anno_MDM2 <- gene_anno |> filter(symbol == "MDM2")
 
 # ---------------- MDM2 CRISPR dependency data ----------------
-MDM2_avana <- getCelllineDataDepletionById(gene_anno_MDM2$ensg, celllineClasses = cl_anno$celllinename, study = "Avana", scores = "chronos") |>
-  mutate(class = case_when(
-    chronos < -1  ~ "sensitive",
-    chronos > -0.5 ~ "resistant",
-    TRUE  ~ "intermediate"
-  )) |>
-  left_join(cl_anno, by = "celllinename") |>
-  reorderByScore(valueCol = "chronos")
-
-# ---------------- MDM2 CRISPR dependency classification ----------------
-ca_sens <- split(as.character(MDM2_avana$celllinename), MDM2_avana$class)[c("sensitive", "resistant")] |>
-  classAssignment()
+MDM2_sens <- getMDM2SensitivityClassification(gene_anno_MDM2, cl_anno)
+MDM2_avana <- MDM2_sens$MDM2_avana
+ca_sens <- MDM2_sens$ca_sens
 
 # ------------ MDM2 CRISPR dependency Waterfall plot with tumortype ------
 generateWaterfallPlot(MDM2_avana, "chronos", ylabel = "chronos") + geom_hline(yintercept = -1, linetype = "dashed") +
