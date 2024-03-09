@@ -7,23 +7,21 @@ s <- getSettings()
 print(s$db)
 setDbOptions(s)
 
-cl_anno <- getCellLineAnno("human") |>
-  filter(tumortype %in% c("ovarian cancer", "melanoma", "renal cell carcinoma", "colorectal cancer", "esophagogastric cancer")) |>
-  filter(!histology_type %in% c("esophageal adenocarcinoma", "esophageal squamous cell carcinoma")) |>
-  mutate(tumortype = ifelse(tumortype == "esophagogastric cancer", "gastric cancer", as.character(tumortype))) |>
-  mutate(tumortype = as.factor(tumortype))
+source("MDM2_analysis_functions.R")
 
-gene_anno <- getGeneAnno("human") |>
-  filter(grepl("^.{1,2}:", location))
+cl_anno <- getCelllineAnno_4paper()
+gene_anno <- getGeneAnno_4paper()
 
 gene_anno_MDM2 <- gene_anno |> filter(symbol == "MDM2")
 gene_anno_CDKN1A <- gene_anno |> filter(symbol == "CDKN1A")
 gene_anno_TP53 <- gene_anno |> filter(symbol == "TP53")
 
 # ---------------- MDM2 CRISPR dependency data ----------------
-MDM2_avana <- getCelllineDataDepletionById(gene_anno_MDM2$ensg, celllineClasses = cl_anno$celllinename, study = "Avana", scores = "chronos") |>
+MDM2_sens <- getMDM2SensitivityClassification(gene_anno_MDM2, cl_anno)
+
+MDM2_avana <- MDM2_sens$MDM2_avana |>
   rename(MDM2_chronos = chronos) |>
-  select(-ensg) 
+  select(-ensg)
 
 # ---------------- CDKN1A gene expression data ----------------
 CDKN1A_expr <- CLIFF::getCelllineDataGeneExpressionById(gene_anno_CDKN1A$ensg, cl_anno$celllinename) |>
