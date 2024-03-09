@@ -33,8 +33,20 @@ defaultFit <- XIFF::buildMachineLearning(trainingSet, sig_genes$ensg, gene_anno,
 
 modelTestData <- getDataForModel(assignment = testSet, features = defaultFit$bestFeatures)
 
-
 modelTestData |> select(celllinename, class) |>
   mutate(predicted = predict(defaultFit, newdata = modelTestData)) |>
   mutate(correct = ifelse(class == predicted, "correct", "incorrect")) |>
   View()
+
+testResult <- testModel(
+  defaultFit,
+  testSet = testSet,
+  anno = cl_anno)
+
+generateTestPerformanceData(testResult)
+
+generateTablePlot(testResult)
+ggsave("fig7_biomarker_classification.pdf", width = 10, height = 6)
+
+generateTestPerformancePlot(testResult)
+ggsave("fig7_biomarker_performance.pdf", width = 10, height = 6)
