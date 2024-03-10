@@ -33,21 +33,35 @@ MDM2_model <- lapply(msig_data, function(m) {
   XIFF::buildMachineLearning(trainingSet, m, gene_anno, method = "glmnet", p_test = 0, maxFeatures = 25)
 })
 
-#save(ca_sens, sets_MDM2, MDM2_model, file = "MDM2_ML_hallmarks.Rdata")
+save(ca_sens, sets_MDM2, MDM2_model, file = "MDM2_ML_hallmarks.Rdata")
 load("MDM2_ML_gmlnet_max25_hallmarks.Rdata")
 
 # ---- apply model ----
 modelTestData <- getDataForModel(
   assignment = testSet,
-  features = unlist(msig_data)
+  features = unlist(msig_data) |> unique()
 )
 
 ml_result_MDM2 <- lapply(MDM2_model, function(m) {
-  r <- modelTestData %>% select(celllinename, class) %>%
+  r <- modelTestData |> select(celllinename, class) |>
     mutate(class = factor(class, levels = c("sensitive", "resistant")),
            predicted = predict(m, newdata = modelTestData))
   XIFF::generateTestPerformanceData(table(r$predicted, r$class))
 })
 
 # ---- make statistics ------
-bind_rows(ml_result_MDM2, .id = "hallmark") %>% View()
+result <- bind_rows(ml_result_MDM2, .id = "hallmark") |>
+  filter(metric == "Accuracy") |>
+  slice_max(order_by = value, n = 10) |>
+  mutate(hallmark = gsub("HALLMARK_", "", hallmark)) |>
+  mutate(hallmark = forcats::fct_reorder(hallmark, value))
+
+# --------- plot results ------
+ggplot(result, aes(x = hallmark, y = value, fill = hallmark)) +
+  geom_col() +
+  theme_light() +
+  theme(text = element_text(family = "Roboto", size = 18), legend.position = "none") +
+  xlab("") +
+  ylab("Average Accuracy") +
+  #ylim(0.1, 1) +
+  coord_flip()
