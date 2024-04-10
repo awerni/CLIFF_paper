@@ -17,51 +17,53 @@ gene_anno_MDM2 <- gene_anno |> filter(symbol == "MDM2")
 # ---------------- MDM2 CRISPR dependency data ----------------
 MDM2_sens <- getMDM2SensitivityClassification(gene_anno_MDM2, cl_anno)
 MDM2_avana <- MDM2_sens$MDM2_avana
+
 ca_sens <- MDM2_sens$ca_sens
 
-# ----- Machine Learning 2 (finding MOA by hallmark prediction)------
+all_hallmarks <- CLIFF::getAvailableHallmarkGeneSets()
 
-sets_MDM2 <- XIFF::splitTrainingTestSets(ca_sens, 0.2)
+performance2 <- lapply(all_hallmarks, function(h) {
+  print(h)
+  geneSet <- XIFF::getGSEAdata("human", "hallmark", h)
 
-trainingSet <- sets_MDM2$training
-testSet <- sets_MDM2$test
+  defaultFit <- XIFF::buildMachineLearning(
+    cs = ca_sens,
+    geneSet = geneSet,
+    geneAnno = gene_anno,
+    method = "svmLinear2",
+    p_test = 0,
+    maxFeatures = 50
+  )
 
-msig_data <- getGSEAdata("human", "hallmark")
-
-# ---- create models for every hallmark gene set
-MDM2_model <- lapply(msig_data, function(m) {
-  XIFF::buildMachineLearning(trainingSet, m, gene_anno, method = "glmnet", p_test = 0, maxFeatures = 25)
+  defaultFit$resample$Accuracy #|> summary()
 })
+save(MDM2_avana, ca_sens, performance2, all_hallmarks, file = "CLIFF_ML_hallmarks_SVM.Rdata")
 
-save(ca_sens, sets_MDM2, MDM2_model, file = "MDM2_ML_hallmarks.Rdata")
-load("MDM2_ML_gmlnet_max25_hallmarks.Rdata")
+performance_stat2 <- tibble(hallmark = all_hallmarks, accuracy = performance2) |> 
+  unnest(cols = c(accuracy)) |>
+  arrange(accuracy)
 
-# ---- apply model ----
-modelTestData <- getDataForModel(
-  assignment = testSet,
-  features = unlist(msig_data) |> unique()
-)
+ggplot(performance_stat2, aes(x = accuracy, y = forcats::fct_inorder(hallmark))) + geom_point()
 
-ml_result_MDM2 <- lapply(MDM2_model, function(m) {
-  r <- modelTestData |> select(celllinename, class) |>
-    mutate(class = factor(class, levels = c("sensitive", "resistant")),
-           predicted = predict(m, newdata = modelTestData))
-  XIFF::generateTestPerformanceData(table(r$predicted, r$class))
-})
-
-# ---- make statistics ------
-result <- bind_rows(ml_result_MDM2, .id = "hallmark") |>
-  filter(metric == "Accuracy") |>
-  slice_max(order_by = value, n = 10) |>
+performance_stat2 |>
+  group_by(hallmark) |>
+  summarise(accuracy = mean(accuracy)) |>
   mutate(hallmark = gsub("HALLMARK_", "", hallmark)) |>
-  mutate(hallmark = forcats::fct_reorder(hallmark, value))
+  mutate(hallmark = gsub("_", " ", hallmark)) |>
+  arrange(desc(accuracy)) |> slice(1:10) |>
+  XIFF::reorderByScore(orderCol = "hallmark", valueCol = "accuracy") |>
+  ggplot(aes(y = hallmark, x = accuracy, fill = hallmark)) + geom_bar(stat = "identity") +
+    theme(legend.pos = "none", text = element_text(size = 20)) +
+    coord_cartesian(xlim = c(0.88, 0.93)) + ylab("") + xlab("Average accuracy")
 
-# --------- plot results ------
-ggplot(result, aes(x = hallmark, y = value, fill = hallmark)) +
-  geom_col() +
-  theme_light() +
-  theme(text = element_text(family = "Roboto", size = 18), legend.position = "none") +
-  xlab("") +
-  ylab("Average Accuracy") +
-  #ylim(0.1, 1) +
-  coord_flip()
+ggsave("fig8_CLIFF_ML_hallmarks_top10.pdf", height = 3.28, width = 8.02)
+
+performance_stat2 |>
+  mutate(hallmark = gsub("HALLMARK_", "", hallmark)) |>
+  mutate(hallmark = gsub("_", " ", hallmark)) |>
+  arrange(desc(accuracy)) |>
+  ggplot(aes(x = accuracy, y = forcats::fct_reorder(hallmark, accuracy, mean))) + geom_boxplot() +
+    theme(text = element_text(size = 20)) + xlab("Accuracy") + ylab("Hallmark") +
+    theme(legend.position = "none")
+
+ggsave("fig8_CLIFF_ML_hallmarks_boxplot.pdf", height = 15, width = 8.02)
